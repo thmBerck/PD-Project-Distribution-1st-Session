@@ -20,4 +20,12 @@ public class Item {
     public BigDecimal getPrice() {
         return price;
     }
+
+    @Override
+    public String toString() {
+        return "Item{" +
+                "vendor=" + vendor +
+                ", price=" + price +
+                '}';
+    }
 }

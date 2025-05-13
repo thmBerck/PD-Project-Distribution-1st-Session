@@ -7,7 +7,8 @@ public class Stock {
     private HashMap<String, ArrayList<Item>> stock = new HashMap<String, ArrayList<Item>>();
 
 
-    //https://www.w3schools.com/java/ref_hashmap_computeifabsent.asp
+
+    //METHODS
     public void addItem(Item item) {
         ArrayList<Item> items = stock.computeIfAbsent(item.getId(), k -> new ArrayList<Item>());
         items.add(item);
@@ -19,8 +20,8 @@ public class Stock {
             throw new NoSuchItemError("No such item found in the stock of the marketplace.");
         }
         items.sort(Comparator.comparing(Item::getPrice));
-        Item result = items.get(0);
-        items.remove(0);
+        Item result = items.getFirst();
+        items.removeFirst();
         return result;
     }
 
@@ -31,15 +32,17 @@ public class Stock {
                 '}';
     }
 
+    //MAIN
     public static void main(String[] args) throws NoSuchItemError {
         Stock stock = new Stock();
-        stock.addItem(new Item("1", new Vendor(), new BigDecimal("5.45")));
-        stock.addItem(new Item("1", new Vendor(), new BigDecimal("23.45")));
-        stock.addItem(new Item("1", new Vendor(), new BigDecimal("20.45")));
-        stock.addItem(new Item("1", new Vendor(), new BigDecimal("3.45")));
+        Vendor mediamarkt = new Vendor("MediaMarkt");
+        stock.addItem(new Item("1", mediamarkt, new BigDecimal("5.45")));
+        stock.addItem(new Item("1", mediamarkt, new BigDecimal("23.45")));
+        stock.addItem(new Item("1", mediamarkt, new BigDecimal("20.45")));
+        stock.addItem(new Item("1", mediamarkt, new BigDecimal("3.45")));
         System.out.println(stock.toString());
-        Item item = stock.takeItem("5");
-        System.out.println(item.getPrice());
+        stock.takeItem("1");
+        System.out.println(stock);
 
     }
 
