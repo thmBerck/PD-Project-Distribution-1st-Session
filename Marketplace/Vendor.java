@@ -1,19 +1,38 @@
 package Marketplace;
 
+import org.jspace.RemoteSpace;
+
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Scanner;
 
 public class Vendor {
+    private String id;
     private String name;
     private BigDecimal balance;
+    // TODO miss iets doen met error handling hier
+    private final RemoteSpace ts;
 
-    public Vendor(String name) {
+    {
+        try {
+            ts = new RemoteSpace("tcp://localhost:10101/ts?keep");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Vendor(String id, String name) {
+        this.id = id;
         this.name = name;
         this.balance = new BigDecimal("0");
     }
     public void addStock(String id, Vendor vendor, String price) {
-        //TODO add implementation with tuple spaces
-        System.out.println("ITEM ADDED!" + id + vendor + price);
+        try {
+            ts.put("Marketplace", "Add Stock", new Item(id, vendor.id, new BigDecimal(price)));
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.println("ITEM ADDED!");
     }
     public BigDecimal getBalance() {
         return balance;
@@ -51,7 +70,7 @@ public class Vendor {
     }
 
     public static void main(String[] args) {
-        Vendor vendor = new Vendor("MediaMarkt");
+        Vendor vendor = new Vendor("1", "mediamarkt");
         vendor.commands();
 
     }

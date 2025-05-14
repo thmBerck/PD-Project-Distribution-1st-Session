@@ -1,5 +1,6 @@
 package Marketplace;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.*;
 
@@ -24,6 +25,9 @@ public class Stock {
         items.removeFirst();
         return result;
     }
+    public void displayItems() {
+        stock.forEach((x, l) -> System.out.println("Item with id: " + x));
+    }
 
     @Override
     public String toString() {
@@ -35,11 +39,11 @@ public class Stock {
     //MAIN
     public static void main(String[] args) throws NoSuchItemError {
         Stock stock = new Stock();
-        Vendor mediamarkt = new Vendor("MediaMarkt");
-        stock.addItem(new Item("1", mediamarkt, new BigDecimal("5.45")));
-        stock.addItem(new Item("1", mediamarkt, new BigDecimal("23.45")));
-        stock.addItem(new Item("1", mediamarkt, new BigDecimal("20.45")));
-        stock.addItem(new Item("1", mediamarkt, new BigDecimal("3.45")));
+        Vendor mediamarkt = new Vendor("1", "MediaMarkt");
+        stock.addItem(new Item("1", "1", new BigDecimal("5.45")));
+        stock.addItem(new Item("1", "1", new BigDecimal("23.45")));
+        stock.addItem(new Item("1", "1", new BigDecimal("20.45")));
+        stock.addItem(new Item("1", "1", new BigDecimal("3.45")));
         System.out.println(stock.toString());
         stock.takeItem("1");
         System.out.println(stock);

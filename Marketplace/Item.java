@@ -4,12 +4,12 @@ import java.math.BigDecimal;
 
 public class Item {
     private String id;
-    private Vendor vendor;
+    private String vendor_id;
     private BigDecimal price;
 
-    public Item(String id, Vendor vendor, BigDecimal price) {
+    public Item(String id, String vendor_id, BigDecimal price) {
         this.id = id;
-        this.vendor = vendor;
+        this.vendor_id = vendor_id;
         this.price = price;
     }
 
@@ -24,7 +24,7 @@ public class Item {
     @Override
     public String toString() {
         return "Item{" +
-                "vendor=" + vendor +
+                "vendor=" + vendor_id +
                 ", price=" + price +
                 '}';
     }

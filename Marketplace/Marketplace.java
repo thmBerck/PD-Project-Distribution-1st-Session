@@ -12,15 +12,6 @@ public class Marketplace {
 
     public Marketplace() throws IOException {
     }
-    public void addItem() {
-        try {
-            Object[] result = ts.get(new ActualField("Marketplace"),new ActualField("Add Item"), new FormalField(Item.class));
-            stock.addItem((Item) result[1]);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
-    }
     public void jobListener() {
         new Thread(() -> {
             while(true) {
@@ -30,17 +21,27 @@ public class Marketplace {
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
+                System.out.println((String) result[1]);
                 switch((String) result[1]) {
                     case "Buy Item":
                         try {
                             stock.takeItem((String) result[2]);
                         } catch (NoSuchItemError e) {
-                            System.out.println(e.toString());
+                            System.out.println("Marketplace: " + e.toString());
                             //TODO maybe put this error on the ts to say it has not been added.
                         }
-                    break;
+                        break;
                     case "Add Stock":
-                            stock.addItem((Item) result[2]);
+                        stock.addItem((Item) result[2]);
+                        System.out.println((Item) result[2]);
+                        System.out.println(stock.toString());
+                        break;
+                    case "List Items":
+                        try {
+                            ts.put("Client", "List Items", stock);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
                 }
             }
         }).start();
