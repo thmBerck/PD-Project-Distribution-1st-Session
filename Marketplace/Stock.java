@@ -28,6 +28,18 @@ public class Stock {
     public void displayItems() {
         stock.forEach((x, l) -> System.out.println("Item with id: " + x));
     }
+    public ArrayList<String> showItem(String id) throws NoSuchItemError {
+        ArrayList<Item> items = stock.get(id);
+        if (items == null) {
+            throw new NoSuchItemError("No such item found in the stock of the marketplace.");
+        }
+
+        ArrayList<String> result = new ArrayList<String>();
+        for (Item item : items) {
+            result.add(item.getPrice().toPlainString());
+        }
+        return result;
+    }
 
     @Override
     public String toString() {

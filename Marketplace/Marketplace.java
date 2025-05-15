@@ -5,6 +5,7 @@ import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class Marketplace {
     Stock stock = new Stock();
@@ -42,6 +43,22 @@ public class Marketplace {
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
+                        break;
+                    case "List Item Prices":
+                        ArrayList<String> items;
+                        System.out.println("Are we here son?");
+                        System.out.println((String) result[2]);
+                        try {
+                            items = stock.showItem((String) result[2]);
+                        } catch (NoSuchItemError e) {
+                            throw new RuntimeException(e);
+                        }
+                        try {
+                            ts.put("Client", "List Item Prices", items);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        break;
                 }
             }
         }).start();

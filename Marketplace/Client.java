@@ -24,7 +24,6 @@ public class Client {
     }
 
     public void listItems() {
-        System.out.println("We in baby");
         try {
             ts.put("Marketplace", "List Items", "NO_PAYLOAD");
         } catch (InterruptedException e) {
@@ -34,8 +33,17 @@ public class Client {
     public void displayItems(Stock stock) {
         stock.displayItems();
     }
+    public void displayPrices(ArrayList<String> list) {
+        for(String price : list) {
+            System.out.println(price);
+        }
+    }
     public void listItemPrices(String id) {
-
+        try {
+            ts.put("Marketplace", "List Item Prices", id);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
     public void jobListener() {
         new Thread(() -> {
@@ -49,6 +57,11 @@ public class Client {
                 switch((String) result[1]) {
                     case "List Items":
                         displayItems((Stock) result[2]);
+                        break;
+                    case "List Item Prices":
+                        System.out.println("Are we getting here as well son?");
+                        System.out.println(result[2].getClass());
+                        displayPrices((ArrayList<String>) result[2]);
                         break;
                 }
             }
