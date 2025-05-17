@@ -5,7 +5,6 @@ import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -45,19 +44,21 @@ public class Marketplace {
                 }
                 System.out.println((String) result[1]);
                 switch((String) result[1]) {
-                    case "Add Stock":
+                    case "Add Stock": {
                         Item item = (Item) result[2];
                         stock.addItem(item);
                         System.out.println(item);
                         System.out.println(stock.toString());
                         break;
-                    case "List Items":
+                    }
+                    case "List Items": {
                         try {
                             ts.put("Client", "List Items", stock);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
                         break;
+                    }
                     case "List Item Prices": {
                         ArrayList<Double> items;
                         try {
@@ -75,7 +76,14 @@ public class Marketplace {
 
                     case "Add To Cart": {
                         Either<Item> either;
-                        either = stock.takeItem((String) result[2], (double) result[3]);
+                        Client client = clients.get((String) result[3]);
+                        either = stock.takeItem((String) result[2], client.getBalance());
+                        if(either.isSuccess()) {
+                            Item retrieved_item = either.getValue();
+                            HashMap<String, ArrayList<Item>> clientCart = client.getCart();
+                            ArrayList<Item> items_in_cart = clientCart.computeIfAbsent(retrieved_item.getId(), k -> new ArrayList<Item>());
+                            items_in_cart.add(retrieved_item);
+                        }
                         try {
                             ts.put("Client", "Add To Cart", either);
                         } catch (InterruptedException e) {
@@ -110,6 +118,47 @@ public class Marketplace {
                         either = topUpBalance(clientName, Double.parseDouble(delta));
                         try {
                             ts.put("Admin", "Top Up Balance", either);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        break;
+                    }
+                    case "Get Vendor Stock": {
+                        ArrayList<Item> items;
+                        String vendorName = (String) result[2];
+                        items = stock.getVendorStock(vendorName);
+                        try {
+                            ts.put("Admin", "Get Vendor Stock", items);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        break;
+                    }
+                    case "Get Market Stock": {
+                        try {
+                            ts.put("Admin", "Get Market Stock", stock);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        break;
+                    }
+                    case "View Cart": {
+                        String clientName = (String) result[2];
+                        HashMap<String, ArrayList<Item>> clientCart = clients.get(clientName).getCart();
+                        System.out.println(clientCart);
+                        try {
+                            ts.put("Client", "View Cart", clientCart);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        break;
+                    }
+                    case "Client Show Balance": {
+                        Either<Double> either;
+                        String name = (String) result[2];
+                        either = checkClientBalance(name);
+                        try {
+                            ts.put("Client", "Show Balance", either);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }

@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.Scanner;
 
 public class Vendor {
-    private String id;
     private String name;
     private double balance;
     // TODO miss iets doen met error handling hier
@@ -20,14 +19,13 @@ public class Vendor {
         }
     }
 
-    public Vendor(String id, String name) {
-        this.id = id;
+    public Vendor(String name) {
         this.name = name;
         this.balance = 0.0;
     }
     public void addStock(String id, Vendor vendor, double price) {
         try {
-            ts.put("Marketplace", "Add Stock", new Item(id, vendor.id, price), "NO_PAYLOAD");
+            ts.put("Marketplace", "Add Stock", new Item(id, vendor.name, price), "NO_PAYLOAD");
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -69,7 +67,7 @@ public class Vendor {
     }
 
     public static void main(String[] args) {
-        Vendor vendor = new Vendor("1", "mediamarkt");
+        Vendor vendor = new Vendor("MediaMarkt");
         vendor.commands();
 
     }

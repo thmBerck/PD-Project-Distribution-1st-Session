@@ -2,12 +2,12 @@ package Marketplace;
 
 public class Item {
     private String id;
-    private String vendor_id;
+    private String vendorName;
     private double price;
 
-    public Item(String id, String vendor_id, double price) {
+    public Item(String id, String vendorName, double price) {
         this.id = id;
-        this.vendor_id = vendor_id;
+        this.vendorName = vendorName;
         this.price = price;
     }
     public Item() {}
@@ -16,12 +16,12 @@ public class Item {
         this.id = id;
     }
 
-    public String getVendor_id() {
-        return vendor_id;
+    public String getVendorName() {
+        return vendorName;
     }
 
-    public void setVendor_id(String vendor_id) {
-        this.vendor_id = vendor_id;
+    public void setVendorName(String vendorName) {
+        this.vendorName = vendorName;
     }
 
     public void setPrice(double price) {
@@ -39,7 +39,8 @@ public class Item {
     @Override
     public String toString() {
         return "Item{" +
-                "vendor=" + vendor_id +
+                "id='" + id + '\'' +
+                ", vendorName='" + vendorName + '\'' +
                 ", price=" + price +
                 '}';
     }

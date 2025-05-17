@@ -22,9 +22,10 @@ public class Stock {
         items.sort(Comparator.comparing(Item::getPrice));
         Item result = items.getFirst();
         if(result.getPrice() > balance) {
-            return new Either<Item>(null, "Your balance is unsufficient.", false) ;
+            return new Either<Item>(null, "Your balance is insufficient.", false) ;
         }
         items.removeFirst();
+
         return new Either<Item>(result, null, true);
     }
     public void displayItems() {
@@ -42,6 +43,16 @@ public class Stock {
         }
         return result;
     }
+    public ArrayList<Item> getVendorStock(String vendorName) {
+        ArrayList<Item> return_items = new ArrayList<Item>();
+        for (ArrayList<Item> items : stock.values())
+            for (Item item : items) {
+                if(Objects.equals(item.getVendorName(), vendorName)) {
+                    return_items.add(item);
+                }
+            }
+        return return_items;
+    }
 
     @Override
     public String toString() {
@@ -49,19 +60,5 @@ public class Stock {
                 "stock=" + stock +
                 '}';
     }
-
-    //MAIN
-    public static void main(String[] args) throws NoSuchItemError {
-        Stock stock = new Stock();
-        Vendor mediamarkt = new Vendor("1", "MediaMarkt");
-        stock.addItem(new Item("1", "1", 5.45));
-        stock.addItem(new Item("1", "1", 2.45));
-        stock.addItem(new Item("1", "1", 20.45));
-        stock.addItem(new Item("1", "1", 3.45));
-        System.out.println(stock.toString());
-        System.out.println(stock);
-
-    }
-
 
 }

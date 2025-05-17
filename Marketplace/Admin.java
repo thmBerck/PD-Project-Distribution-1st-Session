@@ -35,6 +35,20 @@ public class Admin {
             throw new RuntimeException(e);
         }
     }
+    private void getVendorStock(String vendorName) {
+        try {
+            ts.put("Marketplace", "Get Vendor Stock", vendorName, "NO_PAYLOAD");
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    private void getMarketStock() {
+        try {
+            ts.put("Marketplace", "Get Market Stock", "NO_PAYLOAD", "NO_PAYLOAD");
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public void jobListener() {
         new Thread(() -> {
@@ -53,6 +67,26 @@ public class Admin {
                         } else {
                             System.out.println("The balance of the client is: " + either.getValue().toString());
                         }
+                        break;
+                    }
+                    case "Top Up Balance": {
+                        Either<Double> either = (Either<Double>) result[2];
+                        if(either.isSuccess() == false) {
+                            System.out.println(either.getError());
+                        } else {
+                            System.out.println("The balance of the client is: " + either.getValue().toString());
+                        }
+                        break;
+                    }
+                    case "Get Vendor Stock": {
+                        ArrayList<Item> items = (ArrayList<Item>) result[2];
+                        System.out.println(items.toString());
+                        break;
+                    }
+                    case "Get Market Stock": {
+                        Stock stock = (Stock) result[2];
+                        System.out.println(stock.toString());
+                        break;
                     }
                 }
             }
@@ -74,8 +108,8 @@ public class Admin {
                     System.out.println("'help': To get all the commands that are possible.");
                     System.out.println("'balance-of-client <name-of-client>': To see the balance of a client.");
                     System.out.println("'top-up-client <name-of-client> <delta>': Change the balance of a client. Delta can be positive or negative.");
-                    System.out.println("'vendor-stock <vendor-name>: Get the current stock per vendor.");
-                    System.out.println("'market-stock: Get the current stock of the Marketplace.");
+                    System.out.println("'vendor-stock <vendor-name>': Get the current stock per vendor.");
+                    System.out.println("'market-stock': Get the current stock of the Marketplace.");
                     break;
                 }
                 case "balance-of-client": {
@@ -91,6 +125,11 @@ public class Admin {
                 }
                 case "vendor-stock": {
                     String vendorName = input_parts[1];
+                    getVendorStock(vendorName);
+                    break;
+                }
+                case "market-stock": {
+                    getMarketStock();
                     break;
                 }
                 default:

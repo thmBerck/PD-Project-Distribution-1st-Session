@@ -62,20 +62,31 @@ public class Client {
     }
     private void addToCart(String itemId) {
         try {
-            ts.put("Marketplace", "Add To Cart", itemId, balance);
+            ts.put("Marketplace", "Add To Cart", itemId, name);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
-    private void putItemIntoCart(Item item) {
-        ArrayList<Item> items = cart.computeIfAbsent(item.getId(), k -> new ArrayList<Item>());
-        items.add(item);
-        cart.put(item.getId(), items);
-        System.out.println(cart.toString());
-    }
     private void viewCart() {
-        System.out.println(cart.toString());
+        try {
+            ts.put("Marketplace", "View Cart", name, "NO_PAYLOAD");
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
+    private void showBalance() {
+        try {
+            ts.put("Marketplace", "Client Show Balance", name, "NO_PAYLOAD");
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public HashMap<String, ArrayList<Item>> getCart() {
+        return cart;
+    }
+
+
     public double getBalance() {
         return balance;
     }
@@ -93,20 +104,39 @@ public class Client {
                     throw new RuntimeException(e);
                 }
                 switch((String) result[1]) {
-                    case "List Items":
+                    case "List Items": {
                         displayItems((Stock) result[2]);
                         break;
-                    case "List Item Prices":
+                    }
+                    case "List Item Prices": {
                         displayPrices((ArrayList<String>) result[2]);
                         break;
-                    case "Add To Cart":
+                    }
+                    case "Add To Cart": {
                         Either<Item> either = (Either<Item>) result[2];
                         if(!either.isSuccess()) {
                             System.out.println(either.getError());
                         } else {
-                            putItemIntoCart(either.getValue());
+                            System.out.println("Successfully added the item.");
                         }
                         break;
+                    }
+                    case "View Cart": {
+                        HashMap<String, ArrayList<Item>> cart = (HashMap<String, ArrayList<Item>>) result[2];
+                        System.out.println(cart.toString());
+                        break;
+                    }
+                    case "Show Balance": {
+                        Either<Double> either = (Either<Double>) result[2];
+                        if(!either.isSuccess()) {
+                            System.out.println(either.getError());
+                        } else {
+                            System.out.println(either.getValue());
+                        }
+                        break;
+                    }
+                    default:
+                        System.out.println("Wrong command and/or wrong api call: " + result[1]);
                 }
             }
         }).start();
@@ -139,7 +169,7 @@ public class Client {
                     listItemPrices(input_parts[1]);
                     break;
                 case "balance":
-                    System.out.println("Your current balance is: " + balance);
+                    showBalance();
                     break;
                 case "add-to-cart":
                     addToCart(input_parts[1]);
