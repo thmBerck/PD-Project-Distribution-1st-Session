@@ -5,13 +5,13 @@ import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
 
 public class Client {
-    private BigDecimal balance = new BigDecimal("0");
+    private final String name;
+    private double balance = 0;
     private HashMap<String, ArrayList<Item>> cart = new HashMap<String, ArrayList<Item>>();
     private final RemoteSpace ts;
 
@@ -23,9 +23,24 @@ public class Client {
         }
     }
 
+    public Client(String name, boolean skipRegistration) {
+        this.name = name;
+        if(!skipRegistration) {
+            registerAsClient();
+        }
+    }
+
+    private void registerAsClient() {
+        try {
+            ts.put("Marketplace", "Register As Client", name, "NO_PAYLOAD");
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void listItems() {
         try {
-            ts.put("Marketplace", "List Items", "NO_PAYLOAD");
+            ts.put("Marketplace", "List Items", "NO_PAYLOAD", "NO_PAYLOAD");
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -38,13 +53,36 @@ public class Client {
             System.out.println(price);
         }
     }
-    public void listItemPrices(String id) {
+    public void listItemPrices(String itemId) {
         try {
-            ts.put("Marketplace", "List Item Prices", id);
+            ts.put("Marketplace", "List Item Prices", itemId, "NO_PAYLOAD");
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
+    private void addToCart(String itemId) {
+        try {
+            ts.put("Marketplace", "Add To Cart", itemId, balance);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    private void putItemIntoCart(Item item) {
+        ArrayList<Item> items = cart.computeIfAbsent(item.getId(), k -> new ArrayList<Item>());
+        items.add(item);
+        cart.put(item.getId(), items);
+        System.out.println(cart.toString());
+    }
+    private void viewCart() {
+        System.out.println(cart.toString());
+    }
+    public double getBalance() {
+        return balance;
+    }
+    public void setBalance(double balance) {
+        this.balance = balance;
+    }
+
     public void jobListener() {
         new Thread(() -> {
             while(true) {
@@ -59,14 +97,21 @@ public class Client {
                         displayItems((Stock) result[2]);
                         break;
                     case "List Item Prices":
-                        System.out.println("Are we getting here as well son?");
-                        System.out.println(result[2].getClass());
                         displayPrices((ArrayList<String>) result[2]);
+                        break;
+                    case "Add To Cart":
+                        Either<Item> either = (Either<Item>) result[2];
+                        if(!either.isSuccess()) {
+                            System.out.println(either.getError());
+                        } else {
+                            putItemIntoCart(either.getValue());
+                        }
                         break;
                 }
             }
         }).start();
     }
+
     public void commands() {
         System.out.println("Welcome to the client interface of the Marketplace system.");
         System.out.println("Type 'help' to get all the commands.");
@@ -82,7 +127,9 @@ public class Client {
                     System.out.println("'help': To get all the commands that are possible.");
                     System.out.println("'balance': To show your balance.");
                     System.out.println("'list-items-store': View all items available in the marketplace.");
-                    System.out.println("'list-item-prices <item>': For a given <item>, view the prices for which it is available.");
+                    System.out.println("'list-item-prices <item-id>': For a given <item-id>, view the prices for which it is available.");
+                    System.out.println("'add-to-cart <item-id>': Add an item to your cart. The cheapest item will always be chosen. By putting an item in your cart, you have a mutual exclusive lock.");
+                    System.out.println("'view-cart': View your cart.");
 
                     break;
                 case "list-items-store":
@@ -94,6 +141,12 @@ public class Client {
                 case "balance":
                     System.out.println("Your current balance is: " + balance);
                     break;
+                case "add-to-cart":
+                    addToCart(input_parts[1]);
+                    break;
+                case "view-cart":
+                    viewCart();
+                    break;
                 default:
                     System.out.println("Command not recognized, please try again.");
                     break;
@@ -102,7 +155,7 @@ public class Client {
     }
 
     public static void main(String[] args) {
-        Client client = new Client();
+        Client client = new Client("Thomas", false);
         client.jobListener();
         client.commands();
     }

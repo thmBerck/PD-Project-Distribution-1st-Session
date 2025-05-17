@@ -5,36 +5,50 @@ import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Marketplace {
     Stock stock = new Stock();
     private final RemoteSpace ts = new RemoteSpace("tcp://localhost:10101/ts?keep");
+    HashMap<String, Client> clients = new HashMap<String, Client>();
 
     public Marketplace() throws IOException {
+    }
+    private Either<Double> checkClientBalance(String clientName) {
+        Client client = clients.get(clientName);
+        if(client == null) {
+            return new Either<Double>(null, "The client was not found.", false);
+        }
+        return new Either<Double>(client.getBalance(), null, true);
+    }
+    private Either<Double> topUpBalance(String clientName, double delta) {
+        Client client = clients.get(clientName);
+        if(client == null) {
+            return new Either<Double>(null, "The client was not found.", false);
+        }
+        if(client.getBalance() + delta < 0) {
+            return new Either<Double>(null, "The client's balance went negative.", false);
+        }
+        client.setBalance(client.getBalance() + delta);
+        return new Either<Double>(client.getBalance(), null, true);
     }
     public void jobListener() {
         new Thread(() -> {
             while(true) {
                 Object[] result = null;
                 try {
-                    result = ts.get(new ActualField("Marketplace"),new FormalField(String.class), new FormalField(Object.class));
+                    result = ts.get(new ActualField("Marketplace"),new FormalField(String.class), new FormalField(Object.class), new FormalField(Object.class));
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
                 System.out.println((String) result[1]);
                 switch((String) result[1]) {
-                    case "Buy Item":
-                        try {
-                            stock.takeItem((String) result[2]);
-                        } catch (NoSuchItemError e) {
-                            System.out.println("Marketplace: " + e.toString());
-                            //TODO maybe put this error on the ts to say it has not been added.
-                        }
-                        break;
                     case "Add Stock":
-                        stock.addItem((Item) result[2]);
-                        System.out.println((Item) result[2]);
+                        Item item = (Item) result[2];
+                        stock.addItem(item);
+                        System.out.println(item);
                         System.out.println(stock.toString());
                         break;
                     case "List Items":
@@ -44,10 +58,8 @@ public class Marketplace {
                             throw new RuntimeException(e);
                         }
                         break;
-                    case "List Item Prices":
-                        ArrayList<String> items;
-                        System.out.println("Are we here son?");
-                        System.out.println((String) result[2]);
+                    case "List Item Prices": {
+                        ArrayList<Double> items;
                         try {
                             items = stock.showItem((String) result[2]);
                         } catch (NoSuchItemError e) {
@@ -59,6 +71,50 @@ public class Marketplace {
                             throw new RuntimeException(e);
                         }
                         break;
+                    }
+
+                    case "Add To Cart": {
+                        Either<Item> either;
+                        either = stock.takeItem((String) result[2], (double) result[3]);
+                        try {
+                            ts.put("Client", "Add To Cart", either);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        break;
+                    }
+
+                    case "Register As Client": {
+                        String clientName = (String) result[2];
+                        clients.put(clientName, new Client(clientName, true));
+                        System.out.println(clients.toString());
+                        break;
+                    }
+
+                    case "Show Balance": {
+                        Either<Double> either;
+                        String name = (String) result[2];
+                        either = checkClientBalance(name);
+                        try {
+                            ts.put("Admin", "Show Balance", either);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        break;
+                    }
+                    case "Top Up Balance": {
+                        //TODO: Change payloads to instances of a class.
+                        Either<Double> either;
+                        String clientName = (String) result[2];
+                        String delta = (String) result[3];
+                        either = topUpBalance(clientName, Double.parseDouble(delta));
+                        try {
+                            ts.put("Admin", "Top Up Balance", either);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        break;
+                    }
                 }
             }
         }).start();

@@ -1,13 +1,11 @@
 package Marketplace;
 
-import java.math.BigDecimal;
-
 public class Item {
     private String id;
     private String vendor_id;
-    private BigDecimal price;
+    private double price;
 
-    public Item(String id, String vendor_id, BigDecimal price) {
+    public Item(String id, String vendor_id, double price) {
         this.id = id;
         this.vendor_id = vendor_id;
         this.price = price;
@@ -26,7 +24,7 @@ public class Item {
         this.vendor_id = vendor_id;
     }
 
-    public void setPrice(BigDecimal price) {
+    public void setPrice(double price) {
         this.price = price;
     }
 
@@ -34,7 +32,7 @@ public class Item {
         return id;
     }
 
-    public BigDecimal getPrice() {
+    public double getPrice() {
         return price;
     }
 

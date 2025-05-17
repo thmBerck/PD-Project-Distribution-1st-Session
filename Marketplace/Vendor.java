@@ -3,13 +3,12 @@ package Marketplace;
 import org.jspace.RemoteSpace;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.Scanner;
 
 public class Vendor {
     private String id;
     private String name;
-    private BigDecimal balance;
+    private double balance;
     // TODO miss iets doen met error handling hier
     private final RemoteSpace ts;
 
@@ -24,17 +23,17 @@ public class Vendor {
     public Vendor(String id, String name) {
         this.id = id;
         this.name = name;
-        this.balance = new BigDecimal("0");
+        this.balance = 0.0;
     }
-    public void addStock(String id, Vendor vendor, String price) {
+    public void addStock(String id, Vendor vendor, double price) {
         try {
-            ts.put("Marketplace", "Add Stock", new Item(id, vendor.id, new BigDecimal(price)));
+            ts.put("Marketplace", "Add Stock", new Item(id, vendor.id, price), "NO_PAYLOAD");
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
         System.out.println("ITEM ADDED!");
     }
-    public BigDecimal getBalance() {
+    public double getBalance() {
         return balance;
     }
     public void commands() {
@@ -53,7 +52,7 @@ public class Vendor {
                     System.out.println("'balance': To show your balance.");
                     break;
                 case "add-stock":
-                    addStock(input_parts[1], this, input_parts[2]);
+                    addStock(input_parts[1], this, Double.valueOf(input_parts[2]));
                     break;
                 case "balance":
                     System.out.println("Your current balance is: " + balance);
