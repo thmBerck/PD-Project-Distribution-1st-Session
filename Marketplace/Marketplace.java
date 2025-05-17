@@ -1,5 +1,6 @@
 package Marketplace;
 
+import Marketplace.Payloads.AddToCartPayload;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
@@ -75,14 +76,15 @@ public class Marketplace {
                     }
 
                     case "Add To Cart": {
-                        Either<Item> either;
-                        Client client = clients.get((String) result[3]);
-                        either = stock.takeItem((String) result[2], client.getBalance());
+                        Either<ArrayList<Item>> either;
+                        AddToCartPayload payload = (AddToCartPayload) result[2];
+                        Client client = clients.get(payload.getClientName());
+                        either = stock.takeItem(payload.getItem_id(), client.getBalance(), payload.getQuantity());
                         if(either.isSuccess()) {
-                            Item retrieved_item = either.getValue();
+                            ArrayList<Item> retrieved_items = either.getValue();
                             HashMap<String, ArrayList<Item>> clientCart = client.getCart();
-                            ArrayList<Item> items_in_cart = clientCart.computeIfAbsent(retrieved_item.getId(), k -> new ArrayList<Item>());
-                            items_in_cart.add(retrieved_item);
+                            ArrayList<Item> items_in_cart = clientCart.computeIfAbsent(payload.getItem_id(), k -> new ArrayList<Item>());
+                            items_in_cart.addAll(retrieved_items);
                         }
                         try {
                             ts.put("Client", "Add To Cart", either);

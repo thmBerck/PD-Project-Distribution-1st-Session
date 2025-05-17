@@ -14,19 +14,20 @@ public class Stock {
         items.add(item);
         stock.put(item.getId(), items);
     }
-    public synchronized Either<Item> takeItem(String id, double balance) {
+    public synchronized Either<ArrayList<Item>> takeItem(String id, double balance, int quantity) {
         ArrayList<Item> items = stock.get(id);
         if (items == null) {
-            return new Either<Item>(null, "No such item found in the stock of the marketplace.", false);
+            return new Either<ArrayList<Item>>(null, "No such item found in the stock of the marketplace.", false);
         }
         items.sort(Comparator.comparing(Item::getPrice));
-        Item result = items.getFirst();
-        if(result.getPrice() > balance) {
-            return new Either<Item>(null, "Your balance is insufficient.", false) ;
+        ArrayList<Item> result = new ArrayList<Item>();
+        if(!(items.size() >= quantity)) {
+            return new Either<ArrayList<Item>>(null, "Not enough items for the given quantity.", false);
         }
-        items.removeFirst();
-
-        return new Either<Item>(result, null, true);
+        for(int i = 0; i < quantity; i++) {
+            result.add(items.removeFirst());
+        }
+        return new Either<ArrayList<Item>>(result, null, true);
     }
     public void displayItems() {
         stock.forEach((x, l) -> System.out.println("Item with id: " + x));

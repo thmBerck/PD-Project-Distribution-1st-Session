@@ -1,5 +1,6 @@
 package Marketplace;
 
+import Marketplace.Payloads.AddToCartPayload;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
@@ -48,8 +49,8 @@ public class Client {
     public void displayItems(Stock stock) {
         stock.displayItems();
     }
-    public void displayPrices(ArrayList<String> list) {
-        for(String price : list) {
+    public void displayPrices(ArrayList<Double> list) {
+        for(Double price : list) {
             System.out.println(price);
         }
     }
@@ -60,9 +61,9 @@ public class Client {
             throw new RuntimeException(e);
         }
     }
-    private void addToCart(String itemId) {
+    private void addToCart(String itemId, String quantity) {
         try {
-            ts.put("Marketplace", "Add To Cart", itemId, name);
+            ts.put("Marketplace", "Add To Cart", new AddToCartPayload(name, itemId, Integer.parseInt(quantity)), "NO_PAYLOAD");
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -109,7 +110,7 @@ public class Client {
                         break;
                     }
                     case "List Item Prices": {
-                        displayPrices((ArrayList<String>) result[2]);
+                        displayPrices((ArrayList<Double>) result[2]);
                         break;
                     }
                     case "Add To Cart": {
@@ -172,7 +173,7 @@ public class Client {
                     showBalance();
                     break;
                 case "add-to-cart":
-                    addToCart(input_parts[1]);
+                    addToCart(input_parts[1], input_parts[2]);
                     break;
                 case "view-cart":
                     viewCart();
