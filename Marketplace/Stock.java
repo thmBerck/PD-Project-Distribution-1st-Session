@@ -14,7 +14,7 @@ public class Stock {
         items.add(item);
         stock.put(item.getId(), items);
     }
-    public synchronized Either<ArrayList<Item>> takeItem(String id, double balance, int quantity) {
+    public synchronized Either<ArrayList<Item>> takeItem(String id, int quantity) {
         ArrayList<Item> items = stock.get(id);
         if (items == null) {
             return new Either<ArrayList<Item>>(null, "No such item found in the stock of the marketplace.", false);

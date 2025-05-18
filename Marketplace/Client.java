@@ -1,6 +1,7 @@
 package Marketplace;
 
 import Marketplace.Payloads.AddToCartPayload;
+import Marketplace.Payloads.RemoveFromCartPayload;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
@@ -68,6 +69,13 @@ public class Client {
             throw new RuntimeException(e);
         }
     }
+    private void removeFromCart(String itemId, String quantity) {
+        try {
+            ts.put("Marketplace", "Remove From Cart", new RemoveFromCartPayload(name, itemId, Integer.parseInt(quantity)), "NO_PAYLOAD");
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
     private void viewCart() {
         try {
             ts.put("Marketplace", "View Cart", name, "NO_PAYLOAD");
@@ -82,11 +90,21 @@ public class Client {
             throw new RuntimeException(e);
         }
     }
+    private void purchase() {
+        try {
+            ts.put("Marketplace", "Purchase", name, "NO_PAYLOAD");
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public HashMap<String, ArrayList<Item>> getCart() {
         return cart;
     }
 
+    public void setCart(HashMap<String, ArrayList<Item>> cart) {
+        this.cart = cart;
+    }
 
     public double getBalance() {
         return balance;
@@ -118,7 +136,16 @@ public class Client {
                         if(!either.isSuccess()) {
                             System.out.println(either.getError());
                         } else {
-                            System.out.println("Successfully added the item.");
+                            System.out.println("Successfully added the item(s).");
+                        }
+                        break;
+                    }
+                    case "Remove From Cart": {
+                        Either<String> either = (Either<String>) result[2];
+                        if(!either.isSuccess()) {
+                            System.out.println(either.getError());
+                        } else {
+                            System.out.println("Successfully removed the item(s).");
                         }
                         break;
                     }
@@ -133,6 +160,15 @@ public class Client {
                             System.out.println(either.getError());
                         } else {
                             System.out.println(either.getValue());
+                        }
+                        break;
+                    }
+                    case "Purchase": {
+                        Either<Double> either = (Either<Double>) result[2];
+                        if(!either.isSuccess()) {
+                            System.out.println(either.getError());
+                        } else {
+                            System.out.println("Your purchase has been made with a total value of: " + either.getValue());
                         }
                         break;
                     }
@@ -159,7 +195,9 @@ public class Client {
                     System.out.println("'balance': To show your balance.");
                     System.out.println("'list-items-store': View all items available in the marketplace.");
                     System.out.println("'list-item-prices <item-id>': For a given <item-id>, view the prices for which it is available.");
-                    System.out.println("'add-to-cart <item-id>': Add an item to your cart. The cheapest item will always be chosen. By putting an item in your cart, you have a mutual exclusive lock.");
+                    System.out.println("'add-to-cart <item-id> <quantity>': Add a given quantity of an item to your cart. The cheapest item will always be chosen. By putting an item in your cart, you have a mutual exclusive lock.");
+                    System.out.println("'remove-from-cart <item-id> <quantity>': Remove a given quantity of an item from your cart.");
+                    System.out.println("'purchase': Purchase the items in your cart. Your balance will be accredited.");
                     System.out.println("'view-cart': View your cart.");
 
                     break;
@@ -167,16 +205,34 @@ public class Client {
                     listItems();
                     break;
                 case "list-item-prices":
+                    if(input_parts.length < 2) {
+                        System.out.println("This command needs 1 argument. Usage: 'list-item-prices <item-id>'");
+                        break;
+                    }
                     listItemPrices(input_parts[1]);
                     break;
                 case "balance":
                     showBalance();
                     break;
                 case "add-to-cart":
+                    if(input_parts.length < 3) {
+                        System.out.println("This command needs 2 arguments. Usage: 'add-to-cart <item-id> <quantity>'");
+                        break;
+                    }
                     addToCart(input_parts[1], input_parts[2]);
+                    break;
+                case "remove-from-cart":
+                    if(input_parts.length < 3) {
+                        System.out.println("This command needs 2 arguments. Usage: 'remove-from-cart <item-id> <quantity>'");
+                        break;
+                    }
+                    removeFromCart(input_parts[1], input_parts[2]);
                     break;
                 case "view-cart":
                     viewCart();
+                    break;
+                case "purchase":
+                    purchase();
                     break;
                 default:
                     System.out.println("Command not recognized, please try again.");

@@ -6,6 +6,7 @@ import org.jspace.RemoteSpace;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Scanner;
 
 public class Admin {
@@ -49,6 +50,13 @@ public class Admin {
             throw new RuntimeException(e);
         }
     }
+    private void getMarketLog() {
+        try {
+            ts.put("Marketplace", "Get Market Log", "NO_PAYLOAD", "NO_PAYLOAD");
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public void jobListener() {
         new Thread(() -> {
@@ -74,7 +82,7 @@ public class Admin {
                         if(either.isSuccess() == false) {
                             System.out.println(either.getError());
                         } else {
-                            System.out.println("The balance of the client is: " + either.getValue().toString());
+                            System.out.println("After modification, the balance of the client is: " + either.getValue().toString());
                         }
                         break;
                     }
@@ -86,6 +94,11 @@ public class Admin {
                     case "Get Market Stock": {
                         Stock stock = (Stock) result[2];
                         System.out.println(stock.toString());
+                        break;
+                    }
+                    case "Get Market Log": {
+                        HashMap<String, HashMap<String, ArrayList<Item>>> market_log = (HashMap<String, HashMap<String, ArrayList<Item>>>) result[2];
+                        System.out.println(market_log.toString());
                         break;
                     }
                 }
@@ -110,6 +123,7 @@ public class Admin {
                     System.out.println("'top-up-client <name-of-client> <delta>': Change the balance of a client. Delta can be positive or negative.");
                     System.out.println("'vendor-stock <vendor-name>': Get the current stock per vendor.");
                     System.out.println("'market-stock': Get the current stock of the Marketplace.");
+                    System.out.println("'market-log': Get the market log of the Marketplace.");
                     break;
                 }
                 case "balance-of-client": {
@@ -130,6 +144,10 @@ public class Admin {
                 }
                 case "market-stock": {
                     getMarketStock();
+                    break;
+                }
+                case "market-log": {
+                    getMarketLog();
                     break;
                 }
                 default:

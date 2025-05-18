@@ -1,18 +1,22 @@
 package Marketplace;
 
 import Marketplace.Payloads.AddToCartPayload;
+import Marketplace.Payloads.RemoveFromCartPayload;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 
 public class Marketplace {
     Stock stock = new Stock();
     private final RemoteSpace ts = new RemoteSpace("tcp://localhost:10101/ts?keep");
     HashMap<String, Client> clients = new HashMap<String, Client>();
+    HashMap<String, HashMap<String, ArrayList<Item>>> market_log = new HashMap<String, HashMap<String, ArrayList<Item>>>(); // Marketlog per Username (String), Marketlog of the user per item, List of all the purchased items.
 
     public Marketplace() throws IOException {
     }
@@ -34,6 +38,59 @@ public class Marketplace {
         client.setBalance(client.getBalance() + delta);
         return new Either<Double>(client.getBalance(), null, true);
     }
+    private Either<String> removeItemsFromCart(String itemId, int quantity, Client client) {
+        HashMap<String, ArrayList<Item>> cart = client.getCart();
+        ArrayList<Item> items = cart.get(itemId);
+        if (items == null) {
+            return new Either<String>(null, "The item id has not been found in the client's cart.", false);
+        }
+        if (items.size() < quantity) {
+            return new Either<String>(null, "There were not enough items of this item id to be removed.", false);
+        }
+        items.sort(Comparator.comparing(Item::getPrice).reversed());
+        ArrayList<Item> to_be_returned = new ArrayList<Item>();
+        for(int i = 0; i < quantity; i++) {
+            to_be_returned.add(items.removeFirst());
+        }
+        for(Item item : to_be_returned) {
+            stock.addItem(item);
+        }
+        return new Either<String>("The items were correctly removed from your cart.", null, true);
+    }
+    private synchronized Either<Double> purchase(String name) {
+        Client client = clients.get(name);
+        market_log.putIfAbsent(name, new HashMap<>());
+        HashMap<String, ArrayList<Item>> client_market_log = market_log.get(name);
+        if(client == null) {
+            return new Either<Double>(null, "The client does not exist", false);
+        }
+        HashMap<String, ArrayList<Item>> cart = client.getCart();
+        if(cart == null) {
+            return new Either<Double>(null, "The client does not yet have a cart on this marketplace.", false);
+        }
+        double total_price = 0.0;
+        for(ArrayList<Item> items : cart.values()) {
+            for(Item item : items) {
+                total_price += item.getPrice();
+
+            }
+        }
+        if(total_price > client.getBalance()) {
+            return new Either<Double>(null, "The total price of the items in the cart exceeds the balance of the client.", false);
+        }
+        client.setBalance(client.getBalance() - total_price);
+
+        // Go through all the item id's that are in the cart and add them to the client's market log respectively. Use putIfAbsent to avoid null pointer exceptions.
+        for(String itemId : cart.keySet()) {
+            ArrayList<Item> purchasedItems = cart.get(itemId);
+            client_market_log.putIfAbsent(itemId, new ArrayList<>());
+            client_market_log.get(itemId).addAll(purchasedItems);
+        }
+        client.setCart(new HashMap<String, ArrayList<Item>>());
+
+        return new Either<Double>(total_price, null, true);
+    }
+
     public void jobListener() {
         new Thread(() -> {
             while(true) {
@@ -79,7 +136,7 @@ public class Marketplace {
                         Either<ArrayList<Item>> either;
                         AddToCartPayload payload = (AddToCartPayload) result[2];
                         Client client = clients.get(payload.getClientName());
-                        either = stock.takeItem(payload.getItem_id(), client.getBalance(), payload.getQuantity());
+                        either = stock.takeItem(payload.getItem_id(), payload.getQuantity());
                         if(either.isSuccess()) {
                             ArrayList<Item> retrieved_items = either.getValue();
                             HashMap<String, ArrayList<Item>> clientCart = client.getCart();
@@ -88,6 +145,22 @@ public class Marketplace {
                         }
                         try {
                             ts.put("Client", "Add To Cart", either);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        break;
+                    }
+                    case "Remove From Cart": {
+                        System.out.println("Entering Remove From Cart");
+                        Either<String> either;
+                        RemoveFromCartPayload payload = (RemoveFromCartPayload) result[2];
+                        System.out.println("The payload is: " + payload.toString());
+                        Client client = clients.get(payload.getClientName());
+                        System.out.println("The client is: " + client.toString());
+                        either = removeItemsFromCart(payload.getItem_id(), payload.getQuantity(), client);
+                        System.out.println("After the operation, the either is: " + either.isSuccess());
+                        try {
+                            ts.put("Client", "Remove From Cart", either);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
@@ -144,6 +217,14 @@ public class Marketplace {
                         }
                         break;
                     }
+                    case "Get Market Log": {
+                        try {
+                            ts.put("Admin", "Get Market Log", market_log);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        break;
+                    }
                     case "View Cart": {
                         String clientName = (String) result[2];
                         HashMap<String, ArrayList<Item>> clientCart = clients.get(clientName).getCart();
@@ -161,6 +242,17 @@ public class Marketplace {
                         either = checkClientBalance(name);
                         try {
                             ts.put("Client", "Show Balance", either);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        break;
+                    }
+                    case "Purchase": {
+                        Either<Double> either;
+                        String name = (String) result[2];
+                        either = purchase(name);
+                        try {
+                            ts.put("Client", "Purchase", either);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
