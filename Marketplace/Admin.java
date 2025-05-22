@@ -79,7 +79,7 @@ public class Admin {
                     }
                     case "Top Up Balance": {
                         Either<Double> either = (Either<Double>) result[2];
-                        if(either.isSuccess() == false) {
+                        if(!either.isSuccess()) {
                             System.out.println(either.getError());
                         } else {
                             System.out.println("After modification, the balance of the client is: " + either.getValue().toString());
@@ -87,8 +87,12 @@ public class Admin {
                         break;
                     }
                     case "Get Vendor Stock": {
-                        ArrayList<Item> items = (ArrayList<Item>) result[2];
-                        System.out.println(items.toString());
+                        Either<ArrayList<Item>> either = (Either<ArrayList<Item>>) result[2];
+                        if(!either.isSuccess()) {
+                            System.out.println(either.getError());
+                        } else {
+                            System.out.println(either.getValue().toString());
+                        }
                         break;
                     }
                     case "Get Market Stock": {
@@ -114,7 +118,6 @@ public class Admin {
             String input = scanner.nextLine();
             String[] input_parts = input.split(" ");
             String command = input_parts[0];
-            System.out.println(command);
             switch(command) {
                 case "help": {
                     System.out.println("ALL COMMANDS CURRENTLY AVAILABLE FOR THE ADMIN INTERFACE:");

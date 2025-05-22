@@ -14,6 +14,14 @@ public class Stock {
         items.add(item);
         stock.put(item.getId(), items);
     }
+    public Either<String> addAmountofItems(Item item, int quantity) {
+        if(item == null) return new Either<String>(null, "The item that was given is null.", false);
+        if(quantity <= 0) return new Either<String>(null, "The quantity that was given is null or is under null.", false);
+        for(int i = 0; i < quantity; i++) {
+            addItem(item);
+        }
+        return new Either<>("The items have been added.", null, true);
+    }
     public synchronized Either<ArrayList<Item>> takeItem(String id, int quantity) {
         ArrayList<Item> items = stock.get(id);
         if (items == null) {
@@ -30,7 +38,11 @@ public class Stock {
         return new Either<ArrayList<Item>>(result, null, true);
     }
     public void displayItems() {
-        stock.forEach((x, l) -> System.out.println("Item with id: " + x));
+        if (stock.isEmpty()) System.out.println("The stock of the marketplace is empty.");
+        stock.forEach((x, l) -> {
+            System.out.println("Item with id: " + x + " is available.");
+        });
+        System.out.println("For the price or the amount of a specific item, please use list-item-prices command.");
     }
     public ArrayList<Double> showItem(String id) throws NoSuchItemError {
         ArrayList<Item> items = stock.get(id);
@@ -44,7 +56,7 @@ public class Stock {
         }
         return result;
     }
-    public ArrayList<Item> getVendorStock(String vendorName) {
+    public Either<ArrayList<Item>> getVendorStock(String vendorName) {
         ArrayList<Item> return_items = new ArrayList<Item>();
         for (ArrayList<Item> items : stock.values())
             for (Item item : items) {
@@ -52,7 +64,7 @@ public class Stock {
                     return_items.add(item);
                 }
             }
-        return return_items;
+        return new Either<ArrayList<Item>>(return_items, null, true);
     }
 
     @Override

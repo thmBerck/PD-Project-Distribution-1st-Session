@@ -1,5 +1,6 @@
 package Marketplace;
 
+import Marketplace.Payloads.AddStockPayload;
 import Marketplace.Payloads.AddToCartPayload;
 import Marketplace.Payloads.RemoveFromCartPayload;
 import org.jspace.ActualField;
@@ -16,6 +17,7 @@ public class Marketplace {
     Stock stock = new Stock();
     private final RemoteSpace ts = new RemoteSpace("tcp://localhost:10101/ts?keep");
     HashMap<String, Client> clients = new HashMap<String, Client>();
+    HashMap<String, Vendor> vendors = new HashMap<String, Vendor>();
     HashMap<String, HashMap<String, ArrayList<Item>>> market_log = new HashMap<String, HashMap<String, ArrayList<Item>>>(); // Marketlog per Username (String), Marketlog of the user per item, List of all the purchased items.
 
     public Marketplace() throws IOException {
@@ -33,7 +35,7 @@ public class Marketplace {
             return new Either<Double>(null, "The client was not found.", false);
         }
         if(client.getBalance() + delta < 0) {
-            return new Either<Double>(null, "The client's balance went negative.", false);
+            return new Either<Double>(null, "An error has occurred. The client's balance would of went negative, but this was prevented.", false);
         }
         client.setBalance(client.getBalance() + delta);
         return new Either<Double>(client.getBalance(), null, true);
@@ -72,7 +74,6 @@ public class Marketplace {
         for(ArrayList<Item> items : cart.values()) {
             for(Item item : items) {
                 total_price += item.getPrice();
-
             }
         }
         if(total_price > client.getBalance()) {
@@ -83,12 +84,23 @@ public class Marketplace {
         // Go through all the item id's that are in the cart and add them to the client's market log respectively. Use putIfAbsent to avoid null pointer exceptions.
         for(String itemId : cart.keySet()) {
             ArrayList<Item> purchasedItems = cart.get(itemId);
+            for(Item item : purchasedItems) {
+                String vendorName = item.getVendorName();
+                Vendor vendor = vendors.get(vendorName);
+                vendor.setBalance(vendor.getBalance() + item.getPrice());
+            }
             client_market_log.putIfAbsent(itemId, new ArrayList<>());
             client_market_log.get(itemId).addAll(purchasedItems);
         }
         client.setCart(new HashMap<String, ArrayList<Item>>());
-
         return new Either<Double>(total_price, null, true);
+    }
+    private Either<Double> getVendorBalance(String vendorName) {
+        Vendor vendor = vendors.get(vendorName);
+        if(vendor == null) {
+            return new Either<Double>(null, "The vendor was not found.", false);
+        }
+        return new Either<Double>(vendor.getBalance(), null, true);
     }
 
     public void jobListener() {
@@ -103,10 +115,15 @@ public class Marketplace {
                 System.out.println((String) result[1]);
                 switch((String) result[1]) {
                     case "Add Stock": {
-                        Item item = (Item) result[2];
-                        stock.addItem(item);
-                        System.out.println(item);
+                        Either<String> either;
+                        AddStockPayload payload = (AddStockPayload) result[2];
+                        either = stock.addAmountofItems(payload.getItem(), payload.getQuantity());
                         System.out.println(stock.toString());
+                        try {
+                            ts.put("Vendor", "Add Stock", either);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
                         break;
                     }
                     case "List Items": {
@@ -173,6 +190,12 @@ public class Marketplace {
                         System.out.println(clients.toString());
                         break;
                     }
+                    case "Register As Vendor": {
+                        String vendorName = (String) result[2];
+                        vendors.put(vendorName, new Vendor(vendorName, true));
+                        System.out.println(vendors.toString());
+                        break;
+                    }
 
                     case "Show Balance": {
                         Either<Double> either;
@@ -199,11 +222,13 @@ public class Marketplace {
                         break;
                     }
                     case "Get Vendor Stock": {
+                        Either<ArrayList<Item>> either;
                         ArrayList<Item> items;
                         String vendorName = (String) result[2];
-                        items = stock.getVendorStock(vendorName);
+                        either = stock.getVendorStock(vendorName);
+                        if(vendors.get(vendorName) == null) either = new Either<ArrayList<Item>>(null, "The vendor was not found.", false);
                         try {
-                            ts.put("Admin", "Get Vendor Stock", items);
+                            ts.put("Admin", "Get Vendor Stock", either);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
@@ -253,6 +278,17 @@ public class Marketplace {
                         either = purchase(name);
                         try {
                             ts.put("Client", "Purchase", either);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                        break;
+                    }
+                    case "Get Vendor Balance": {
+                        Either<Double> either;
+                        String name = (String) result[2];
+                        either = getVendorBalance(name);
+                        try {
+                            ts.put("Vendor", "Get Vendor Balance", either);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }

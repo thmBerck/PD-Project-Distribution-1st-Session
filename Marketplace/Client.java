@@ -47,10 +47,9 @@ public class Client {
             throw new RuntimeException(e);
         }
     }
-    public void displayItems(Stock stock) {
-        stock.displayItems();
-    }
     public void displayPrices(ArrayList<Double> list) {
+        int amount = list.size();
+        System.out.println("There is/are " + amount + " unit(s) of this item available at the following price(s):");
         for(Double price : list) {
             System.out.println(price);
         }
@@ -113,10 +112,14 @@ public class Client {
         this.balance = balance;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public void jobListener() {
         new Thread(() -> {
             while(true) {
-                Object[] result = null;
+                Object[] result;
                 try {
                     result = ts.get(new ActualField("Client"),new FormalField(String.class), new FormalField(Object.class));
                 } catch (InterruptedException e) {
@@ -124,7 +127,8 @@ public class Client {
                 }
                 switch((String) result[1]) {
                     case "List Items": {
-                        displayItems((Stock) result[2]);
+                        Stock stock = (Stock) result[2];
+                        stock.displayItems();
                         break;
                     }
                     case "List Item Prices": {
@@ -151,7 +155,7 @@ public class Client {
                     }
                     case "View Cart": {
                         HashMap<String, ArrayList<Item>> cart = (HashMap<String, ArrayList<Item>>) result[2];
-                        System.out.println(cart.toString());
+                        System.out.println("Your cart consists of the following items: " + cart.toString());
                         break;
                     }
                     case "Show Balance": {
@@ -159,7 +163,7 @@ public class Client {
                         if(!either.isSuccess()) {
                             System.out.println(either.getError());
                         } else {
-                            System.out.println(either.getValue());
+                            System.out.println("Your balance is currently: "+ either.getValue());
                         }
                         break;
                     }
@@ -242,7 +246,11 @@ public class Client {
     }
 
     public static void main(String[] args) {
-        Client client = new Client("Thomas", false);
+        System.out.println("Choose your username: ");
+        Scanner scanner = new Scanner(System.in);
+        String input = scanner.nextLine();
+        Client client = new Client(input, false);
+        System.out.println("Hello " + client.getName() + "!");
         client.jobListener();
         client.commands();
     }
