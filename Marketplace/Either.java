@@ -1,7 +1,8 @@
 package Marketplace;
 
-import java.math.BigDecimal;
-
+/**
+ * @author: Thomas Louis Fernando Berckmoes (netid: tb000026)
+ */
 public class Either<T> {
     private final T value;
     private final String error;

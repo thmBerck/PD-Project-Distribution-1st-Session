@@ -1,5 +1,6 @@
 package Marketplace;
 
+import Marketplace.Payloads.TopUpBalancePayload;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
@@ -8,7 +9,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
-
+/**
+ * @author: Thomas Louis Fernando Berckmoes (netid: tb000026)
+ */
 public class Admin {
     private final RemoteSpace ts;
 
@@ -31,7 +34,7 @@ public class Admin {
     }
     private void topUpBalance(String clientName, String delta) {
         try {
-            ts.put("Marketplace", "Top Up Balance", clientName, delta);
+            ts.put("Marketplace", "Top Up Balance", new TopUpBalancePayload(clientName, Double.parseDouble(delta)), "NO_PAYLOAD");
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -130,17 +133,29 @@ public class Admin {
                     break;
                 }
                 case "balance-of-client": {
+                    if(input_parts.length < 2) {
+                        System.out.println("This command needs 1 argument. Usage: 'balance-of-client <name-of-client>'");
+                        break;
+                    }
                     String clientName = input_parts[1];
                     showClientBalance(clientName);
                     break;
                 }
                 case "top-up-client": {
+                    if(input_parts.length < 3) {
+                        System.out.println("This command needs 2 arguments. Usage: 'top-up-client <name-of-client> <delta>'");
+                        break;
+                    }
                     String clientName = input_parts[1];
                     String delta = input_parts[2];
                     topUpBalance(clientName, delta);
                     break;
                 }
                 case "vendor-stock": {
+                    if(input_parts.length < 2) {
+                        System.out.println("This command needs 1 argument. Usage: 'vendor-stock <vendor-name>'");
+                        break;
+                    }
                     String vendorName = input_parts[1];
                     getVendorStock(vendorName);
                     break;

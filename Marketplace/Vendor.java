@@ -7,26 +7,23 @@ import org.jspace.RemoteSpace;
 
 import java.io.IOException;
 import java.util.Scanner;
-
+/**
+ * @author: Thomas Louis Fernando Berckmoes (netid: tb000026)
+ */
 public class Vendor {
     private String name;
     private double balance;
-    // TODO miss iets doen met error handling hier
     // TODO Ik moet ervoor zorgen dat wanneer de marketplace iets terugstuurt naar de vendor deze specifiek naar de naam van de vendor wordt gestuurd, ook met client doen.
     private final RemoteSpace ts;
 
-    {
+    public Vendor(String name, boolean skipRegistration) {
+        this.name = name;
+        this.balance = 0.0;
         try {
             ts = new RemoteSpace("tcp://localhost:10101/ts?keep");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public Vendor(String name, boolean skipRegistration) {
-        this.name = name;
-        this.balance = 0.0;
-
         if (!skipRegistration) {
             registerAsVendor();
         }
@@ -78,6 +75,10 @@ public class Vendor {
                     break;
                 }
                 case "add-stock":{
+                    if(input_parts.length < 4) {
+                        System.out.println("This command needs 3 arguments. Usage: 'add-stock <item-id> <number> <item-price>'");
+                        break;
+                    }
                     addStock(input_parts[1], Integer.parseInt(input_parts[2]), this, Double.parseDouble(input_parts[3]));
                     break;
                 }
@@ -97,13 +98,14 @@ public class Vendor {
             while(true) {
                 Object[] result;
                 try {
-                    result = ts.get(new ActualField("Vendor"),new FormalField(String.class), new FormalField(Object.class));
+                    result = ts.get(new ActualField("Vendor"), new ActualField(name), new FormalField(String.class), new FormalField(Object.class));
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                switch((String) result[1]) {
+                System.out.println((String) result[2]);
+                switch((String) result[2]) {
                     case "Add Stock": {
-                        Either<String> either = (Either<String>) result[2];
+                        Either<String> either = (Either<String>) result[3];
                         if(!either.isSuccess()) {
                             System.out.println(either.getError());
                         } else {
@@ -112,7 +114,7 @@ public class Vendor {
                         break;
                     }
                     case "Get Vendor Balance": {
-                        Either<Double> either = (Either<Double>) result[2];
+                        Either<Double> either = (Either<Double>) result[3];
                         if(!either.isSuccess()) {
                             System.out.println(either.getError());
                         } else {
@@ -139,7 +141,6 @@ public class Vendor {
         Scanner scanner = new Scanner(System.in);
         String input = scanner.nextLine();
         Vendor vendor = new Vendor(input, false);
-        //TODO add vendor interface that lets you choose name and register it to the marketplace.
         vendor.jobListener();
         vendor.commands();
 

@@ -1,8 +1,9 @@
 package Marketplace;
 
-import java.io.IOException;
 import java.util.*;
-
+/**
+ * @author: Thomas Louis Fernando Berckmoes (netid: tb000026)
+ */
 public class Stock {
     private HashMap<String, ArrayList<Item>> stock = new HashMap<String, ArrayList<Item>>();
 
@@ -25,7 +26,7 @@ public class Stock {
     public synchronized Either<ArrayList<Item>> takeItem(String id, int quantity) {
         ArrayList<Item> items = stock.get(id);
         if (items == null) {
-            return new Either<ArrayList<Item>>(null, "No such item found in the stock of the marketplace.", false);
+            return new Either<ArrayList<Item>>(null, "No such item was found in the stock of the marketplace.", false);
         }
         items.sort(Comparator.comparing(Item::getPrice));
         ArrayList<Item> result = new ArrayList<Item>();
@@ -44,17 +45,17 @@ public class Stock {
         });
         System.out.println("For the price or the amount of a specific item, please use list-item-prices command.");
     }
-    public ArrayList<Double> showItem(String id) throws NoSuchItemError {
+    public Either<ArrayList<Double>> showItem(String id) {
         ArrayList<Item> items = stock.get(id);
         if (items == null) {
-            throw new NoSuchItemError("No such item found in the stock of the marketplace.");
+            return new Either<ArrayList<Double>>(null, "No such item was found in the stock of the marketplace.", false);
         }
 
         ArrayList<Double> result = new ArrayList<Double>();
         for (Item item : items) {
             result.add(item.getPrice());
         }
-        return result;
+        return new Either<ArrayList<Double>>(result, null, true);
     }
     public Either<ArrayList<Item>> getVendorStock(String vendorName) {
         ArrayList<Item> return_items = new ArrayList<Item>();

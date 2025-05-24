@@ -1,5 +1,7 @@
 package Marketplace;
-
+/**
+ * @author: Thomas Louis Fernando Berckmoes (netid: tb000026)
+ */
 public class Item {
     private String id;
     private String vendorName;

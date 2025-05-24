@@ -1,7 +1,6 @@
 package Marketplace;
 
-import Marketplace.Payloads.AddToCartPayload;
-import Marketplace.Payloads.RemoveFromCartPayload;
+import Marketplace.Payloads.CartUpdatePayload;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
@@ -9,24 +8,25 @@ import org.jspace.RemoteSpace;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
-
+/**
+ * @author: Thomas Louis Fernando Berckmoes (netid: tb000026)
+ */
 public class Client {
     private final String name;
     private double balance = 0;
     private HashMap<String, ArrayList<Item>> cart = new HashMap<String, ArrayList<Item>>();
     private final RemoteSpace ts;
 
-    {
+
+    public Client(String name, boolean skipRegistration) {
+        this.name = name;
         try {
             ts = new RemoteSpace("tcp://localhost:10101/ts?keep");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public Client(String name, boolean skipRegistration) {
-        this.name = name;
         if(!skipRegistration) {
             registerAsClient();
         }
@@ -47,13 +47,6 @@ public class Client {
             throw new RuntimeException(e);
         }
     }
-    public void displayPrices(ArrayList<Double> list) {
-        int amount = list.size();
-        System.out.println("There is/are " + amount + " unit(s) of this item available at the following price(s):");
-        for(Double price : list) {
-            System.out.println(price);
-        }
-    }
     public void listItemPrices(String itemId) {
         try {
             ts.put("Marketplace", "List Item Prices", itemId, "NO_PAYLOAD");
@@ -63,14 +56,14 @@ public class Client {
     }
     private void addToCart(String itemId, String quantity) {
         try {
-            ts.put("Marketplace", "Add To Cart", new AddToCartPayload(name, itemId, Integer.parseInt(quantity)), "NO_PAYLOAD");
+            ts.put("Marketplace", "Add To Cart", new CartUpdatePayload(name, itemId, Integer.parseInt(quantity)), "NO_PAYLOAD");
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
     private void removeFromCart(String itemId, String quantity) {
         try {
-            ts.put("Marketplace", "Remove From Cart", new RemoveFromCartPayload(name, itemId, Integer.parseInt(quantity)), "NO_PAYLOAD");
+            ts.put("Marketplace", "Remove From Cart", new CartUpdatePayload(name, itemId, Integer.parseInt(quantity)), "NO_PAYLOAD");
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -94,6 +87,15 @@ public class Client {
             ts.put("Marketplace", "Purchase", name, "NO_PAYLOAD");
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
+        }
+    }
+    // For the stream I have used this source: https://www.tutorialspoint.com/how-to-get-unique-values-from-arraylist-using-java-8
+    public void displayPrices(ArrayList<Double> list) {
+        int amount = list.size();
+        System.out.println("There is/are " + amount + " unit(s) of this item available at the following price(s):");
+        List<Double> uniquePrices = list.stream().distinct().toList();
+        for(Double price : uniquePrices) {
+            System.out.println(price);
         }
     }
 
@@ -132,7 +134,8 @@ public class Client {
                         break;
                     }
                     case "List Item Prices": {
-                        displayPrices((ArrayList<Double>) result[2]);
+                        Either <ArrayList<Double>> either = (Either<ArrayList<Double>>) result[2];
+                        displayPrices(either.getValue());
                         break;
                     }
                     case "Add To Cart": {
@@ -201,7 +204,7 @@ public class Client {
                     System.out.println("'list-item-prices <item-id>': For a given <item-id>, view the prices for which it is available.");
                     System.out.println("'add-to-cart <item-id> <quantity>': Add a given quantity of an item to your cart. The cheapest item will always be chosen. By putting an item in your cart, you have a mutual exclusive lock.");
                     System.out.println("'remove-from-cart <item-id> <quantity>': Remove a given quantity of an item from your cart.");
-                    System.out.println("'purchase': Purchase the items in your cart. Your balance will be accredited.");
+                    System.out.println("'purchase': Purchase the items in your cart. Your balance will be accredited. If you do not have enough balance, the operation will fail.");
                     System.out.println("'view-cart': View your cart.");
 
                     break;

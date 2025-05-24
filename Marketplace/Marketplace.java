@@ -1,18 +1,19 @@
 package Marketplace;
 
 import Marketplace.Payloads.AddStockPayload;
-import Marketplace.Payloads.AddToCartPayload;
-import Marketplace.Payloads.RemoveFromCartPayload;
+import Marketplace.Payloads.CartUpdatePayload;
+import Marketplace.Payloads.TopUpBalancePayload;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-
+/**
+ * @author: Thomas Louis Fernando Berckmoes (netid: tb000026)
+ */
 public class Marketplace {
     Stock stock = new Stock();
     private final RemoteSpace ts = new RemoteSpace("tcp://localhost:10101/ts?keep");
@@ -106,21 +107,20 @@ public class Marketplace {
     public void jobListener() {
         new Thread(() -> {
             while(true) {
-                Object[] result = null;
+                Object[] result;
                 try {
                     result = ts.get(new ActualField("Marketplace"),new FormalField(String.class), new FormalField(Object.class), new FormalField(Object.class));
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                System.out.println((String) result[1]);
                 switch((String) result[1]) {
                     case "Add Stock": {
+                        System.out.println("Entering add stock");
                         Either<String> either;
                         AddStockPayload payload = (AddStockPayload) result[2];
                         either = stock.addAmountofItems(payload.getItem(), payload.getQuantity());
-                        System.out.println(stock.toString());
                         try {
-                            ts.put("Vendor", "Add Stock", either);
+                            ts.put("Vendor", payload.getItem().getVendorName(), "Add Stock", either);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
@@ -135,14 +135,10 @@ public class Marketplace {
                         break;
                     }
                     case "List Item Prices": {
-                        ArrayList<Double> items;
+                        Either<ArrayList<Double>> either;
+                        either = stock.showItem((String) result[2]);
                         try {
-                            items = stock.showItem((String) result[2]);
-                        } catch (NoSuchItemError e) {
-                            throw new RuntimeException(e);
-                        }
-                        try {
-                            ts.put("Client", "List Item Prices", items);
+                            ts.put("Client", "List Item Prices", either);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
@@ -151,7 +147,7 @@ public class Marketplace {
 
                     case "Add To Cart": {
                         Either<ArrayList<Item>> either;
-                        AddToCartPayload payload = (AddToCartPayload) result[2];
+                        CartUpdatePayload payload = (CartUpdatePayload) result[2];
                         Client client = clients.get(payload.getClientName());
                         either = stock.takeItem(payload.getItem_id(), payload.getQuantity());
                         if(either.isSuccess()) {
@@ -168,14 +164,10 @@ public class Marketplace {
                         break;
                     }
                     case "Remove From Cart": {
-                        System.out.println("Entering Remove From Cart");
                         Either<String> either;
-                        RemoveFromCartPayload payload = (RemoveFromCartPayload) result[2];
-                        System.out.println("The payload is: " + payload.toString());
+                        CartUpdatePayload payload = (CartUpdatePayload) result[2];
                         Client client = clients.get(payload.getClientName());
-                        System.out.println("The client is: " + client.toString());
                         either = removeItemsFromCart(payload.getItem_id(), payload.getQuantity(), client);
-                        System.out.println("After the operation, the either is: " + either.isSuccess());
                         try {
                             ts.put("Client", "Remove From Cart", either);
                         } catch (InterruptedException e) {
@@ -187,13 +179,11 @@ public class Marketplace {
                     case "Register As Client": {
                         String clientName = (String) result[2];
                         clients.put(clientName, new Client(clientName, true));
-                        System.out.println(clients.toString());
                         break;
                     }
                     case "Register As Vendor": {
                         String vendorName = (String) result[2];
                         vendors.put(vendorName, new Vendor(vendorName, true));
-                        System.out.println(vendors.toString());
                         break;
                     }
 
@@ -209,11 +199,9 @@ public class Marketplace {
                         break;
                     }
                     case "Top Up Balance": {
-                        //TODO: Change payloads to instances of a class.
                         Either<Double> either;
-                        String clientName = (String) result[2];
-                        String delta = (String) result[3];
-                        either = topUpBalance(clientName, Double.parseDouble(delta));
+                        TopUpBalancePayload payload = (TopUpBalancePayload) result[2];
+                        either = topUpBalance(payload.getClientName(), payload.getDelta());
                         try {
                             ts.put("Admin", "Top Up Balance", either);
                         } catch (InterruptedException e) {
@@ -223,7 +211,6 @@ public class Marketplace {
                     }
                     case "Get Vendor Stock": {
                         Either<ArrayList<Item>> either;
-                        ArrayList<Item> items;
                         String vendorName = (String) result[2];
                         either = stock.getVendorStock(vendorName);
                         if(vendors.get(vendorName) == null) either = new Either<ArrayList<Item>>(null, "The vendor was not found.", false);
@@ -253,7 +240,6 @@ public class Marketplace {
                     case "View Cart": {
                         String clientName = (String) result[2];
                         HashMap<String, ArrayList<Item>> clientCart = clients.get(clientName).getCart();
-                        System.out.println(clientCart);
                         try {
                             ts.put("Client", "View Cart", clientCart);
                         } catch (InterruptedException e) {
@@ -284,11 +270,13 @@ public class Marketplace {
                         break;
                     }
                     case "Get Vendor Balance": {
+                        System.out.println("Entering get vendor balance");
                         Either<Double> either;
                         String name = (String) result[2];
                         either = getVendorBalance(name);
                         try {
-                            ts.put("Vendor", "Get Vendor Balance", either);
+                            System.out.println("Sending vendor balance back");
+                            ts.put("Vendor", name, "Get Vendor Balance", either);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
