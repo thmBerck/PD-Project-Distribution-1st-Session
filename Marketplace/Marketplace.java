@@ -2,6 +2,7 @@ package Marketplace;
 
 import Marketplace.Payloads.AddStockPayload;
 import Marketplace.Payloads.CartUpdatePayload;
+import Marketplace.Payloads.ListItemPricesPayload;
 import Marketplace.Payloads.TopUpBalancePayload;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
@@ -109,7 +110,7 @@ public class Marketplace {
             while(true) {
                 Object[] result;
                 try {
-                    result = ts.get(new ActualField("Marketplace"),new FormalField(String.class), new FormalField(Object.class), new FormalField(Object.class));
+                    result = ts.get(new ActualField("Marketplace"),new FormalField(String.class), new FormalField(Object.class));
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -127,18 +128,20 @@ public class Marketplace {
                         break;
                     }
                     case "List Items": {
+                        String clientName = (String) result[2];
                         try {
-                            ts.put("Client", "List Items", stock);
+                            ts.put("Client", clientName, "List Items", stock);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
                         break;
                     }
                     case "List Item Prices": {
-                        Either<ArrayList<Double>> either;
-                        either = stock.showItem((String) result[2]);
+                        ListItemPricesPayload payload = (ListItemPricesPayload) result[2];
+                        Either<ArrayList<String>> either;
+                        either = stock.showItem(payload.getItemId());
                         try {
-                            ts.put("Client", "List Item Prices", either);
+                            ts.put("Client", payload.getClientName(), "List Item Prices", either);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
@@ -157,7 +160,7 @@ public class Marketplace {
                             items_in_cart.addAll(retrieved_items);
                         }
                         try {
-                            ts.put("Client", "Add To Cart", either);
+                            ts.put("Client", payload.getClientName(), "Add To Cart", either);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
@@ -169,7 +172,7 @@ public class Marketplace {
                         Client client = clients.get(payload.getClientName());
                         either = removeItemsFromCart(payload.getItem_id(), payload.getQuantity(), client);
                         try {
-                            ts.put("Client", "Remove From Cart", either);
+                            ts.put("Client", payload.getClientName(), "Remove From Cart", either);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
@@ -241,7 +244,7 @@ public class Marketplace {
                         String clientName = (String) result[2];
                         HashMap<String, ArrayList<Item>> clientCart = clients.get(clientName).getCart();
                         try {
-                            ts.put("Client", "View Cart", clientCart);
+                            ts.put("Client", clientName, "View Cart", clientCart);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
@@ -249,10 +252,10 @@ public class Marketplace {
                     }
                     case "Client Show Balance": {
                         Either<Double> either;
-                        String name = (String) result[2];
-                        either = checkClientBalance(name);
+                        String clientName = (String) result[2];
+                        either = checkClientBalance(clientName);
                         try {
-                            ts.put("Client", "Show Balance", either);
+                            ts.put("Client", clientName, "Show Balance",  either);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
@@ -260,10 +263,10 @@ public class Marketplace {
                     }
                     case "Purchase": {
                         Either<Double> either;
-                        String name = (String) result[2];
-                        either = purchase(name);
+                        String clientName = (String) result[2];
+                        either = purchase(clientName);
                         try {
-                            ts.put("Client", "Purchase", either);
+                            ts.put("Client", clientName, "Purchase", either);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }

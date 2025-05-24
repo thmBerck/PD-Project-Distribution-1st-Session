@@ -43,19 +43,26 @@ public class Stock {
         stock.forEach((x, l) -> {
             System.out.println("Item with id: " + x + " is available.");
         });
-        System.out.println("For the price or the amount of a specific item, please use list-item-prices command.");
+        System.out.println("For the price and the amount available of a specific item, please use list-item-prices command.");
     }
-    public Either<ArrayList<Double>> showItem(String id) {
+    public Either<ArrayList<String>> showItem(String id) {
         ArrayList<Item> items = stock.get(id);
         if (items == null) {
-            return new Either<ArrayList<Double>>(null, "No such item was found in the stock of the marketplace.", false);
+            return new Either<ArrayList<String>>(null, "No such item was found in the stock of the marketplace.", false);
         }
 
-        ArrayList<Double> result = new ArrayList<Double>();
+        HashMap<String, Integer> intermediary_result = new HashMap<String, Integer>();
         for (Item item : items) {
-            result.add(item.getPrice());
+            String key = item.getVendorName() + "@" + item.getPrice();
+            int count = intermediary_result.getOrDefault(key, 0);
+            intermediary_result.put(key, count + 1);
         }
-        return new Either<ArrayList<Double>>(result, null, true);
+        ArrayList<String> result = new ArrayList<String>();
+        for (String key : intermediary_result.keySet()) {
+            int count = intermediary_result.get(key);
+            result.add(key.concat("@" + count));
+        }
+        return new Either<ArrayList<String>>(result, null, true);
     }
     public Either<ArrayList<Item>> getVendorStock(String vendorName) {
         ArrayList<Item> return_items = new ArrayList<Item>();

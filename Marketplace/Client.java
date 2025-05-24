@@ -1,6 +1,7 @@
 package Marketplace;
 
 import Marketplace.Payloads.CartUpdatePayload;
+import Marketplace.Payloads.ListItemPricesPayload;
 import org.jspace.ActualField;
 import org.jspace.FormalField;
 import org.jspace.RemoteSpace;
@@ -34,7 +35,7 @@ public class Client {
 
     private void registerAsClient() {
         try {
-            ts.put("Marketplace", "Register As Client", name, "NO_PAYLOAD");
+            ts.put("Marketplace", "Register As Client", name);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -42,60 +43,63 @@ public class Client {
 
     public void listItems() {
         try {
-            ts.put("Marketplace", "List Items", "NO_PAYLOAD", "NO_PAYLOAD");
+            ts.put("Marketplace", "List Items", name);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
     public void listItemPrices(String itemId) {
         try {
-            ts.put("Marketplace", "List Item Prices", itemId, "NO_PAYLOAD");
+            ts.put("Marketplace", "List Item Prices", new ListItemPricesPayload(itemId, name));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
     private void addToCart(String itemId, String quantity) {
         try {
-            ts.put("Marketplace", "Add To Cart", new CartUpdatePayload(name, itemId, Integer.parseInt(quantity)), "NO_PAYLOAD");
+            ts.put("Marketplace", "Add To Cart", new CartUpdatePayload(name, itemId, Integer.parseInt(quantity)));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
     private void removeFromCart(String itemId, String quantity) {
         try {
-            ts.put("Marketplace", "Remove From Cart", new CartUpdatePayload(name, itemId, Integer.parseInt(quantity)), "NO_PAYLOAD");
+            ts.put("Marketplace", "Remove From Cart", new CartUpdatePayload(name, itemId, Integer.parseInt(quantity)));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
     private void viewCart() {
         try {
-            ts.put("Marketplace", "View Cart", name, "NO_PAYLOAD");
+            ts.put("Marketplace", "View Cart", name);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
     private void showBalance() {
         try {
-            ts.put("Marketplace", "Client Show Balance", name, "NO_PAYLOAD");
+            ts.put("Marketplace", "Client Show Balance", name);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
     private void purchase() {
         try {
-            ts.put("Marketplace", "Purchase", name, "NO_PAYLOAD");
+            ts.put("Marketplace", "Purchase", name);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
-    // For the stream I have used this source: https://www.tutorialspoint.com/how-to-get-unique-values-from-arraylist-using-java-8
-    public void displayPrices(ArrayList<Double> list) {
+    // https://www.geeksforgeeks.org/hashmap-getordefaultkey-defaultvalue-method-in-java-with-examples/
+    public void displayPrices(ArrayList<String> list) {
         int amount = list.size();
-        System.out.println("There is/are " + amount + " unit(s) of this item available at the following price(s):");
-        List<Double> uniquePrices = list.stream().distinct().toList();
-        for(Double price : uniquePrices) {
-            System.out.println(price);
+        System.out.println(amount + " unit(s) found:");
+        for(String match : list) {
+            String[] parts = match.split("@");
+            String vendor = parts[0];
+            String price = parts[1];
+            String count = parts[2];
+            System.out.println("There is/are " + count + " unit(s) of this item available at " + price + " from the vendor " + vendor + ".");
         }
     }
 
@@ -123,23 +127,23 @@ public class Client {
             while(true) {
                 Object[] result;
                 try {
-                    result = ts.get(new ActualField("Client"),new FormalField(String.class), new FormalField(Object.class));
+                    result = ts.get(new ActualField("Client"), new ActualField(name), new FormalField(String.class), new FormalField(Object.class));
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                switch((String) result[1]) {
+                switch((String) result[2]) {
                     case "List Items": {
-                        Stock stock = (Stock) result[2];
+                        Stock stock = (Stock) result[3];
                         stock.displayItems();
                         break;
                     }
                     case "List Item Prices": {
-                        Either <ArrayList<Double>> either = (Either<ArrayList<Double>>) result[2];
+                        Either<ArrayList<String>> either = (Either<ArrayList<String>>) result[3];
                         displayPrices(either.getValue());
                         break;
                     }
                     case "Add To Cart": {
-                        Either<Item> either = (Either<Item>) result[2];
+                        Either<Item> either = (Either<Item>) result[3];
                         if(!either.isSuccess()) {
                             System.out.println(either.getError());
                         } else {
@@ -148,7 +152,7 @@ public class Client {
                         break;
                     }
                     case "Remove From Cart": {
-                        Either<String> either = (Either<String>) result[2];
+                        Either<String> either = (Either<String>) result[3];
                         if(!either.isSuccess()) {
                             System.out.println(either.getError());
                         } else {
@@ -157,12 +161,16 @@ public class Client {
                         break;
                     }
                     case "View Cart": {
-                        HashMap<String, ArrayList<Item>> cart = (HashMap<String, ArrayList<Item>>) result[2];
+                        HashMap<String, ArrayList<Item>> cart = (HashMap<String, ArrayList<Item>>) result[3];
+                        if(cart.isEmpty()) {
+                            System.out.println("Your cart is empty.");
+                            break;
+                        }
                         System.out.println("Your cart consists of the following items: " + cart.toString());
                         break;
                     }
                     case "Show Balance": {
-                        Either<Double> either = (Either<Double>) result[2];
+                        Either<Double> either = (Either<Double>) result[3];
                         if(!either.isSuccess()) {
                             System.out.println(either.getError());
                         } else {
@@ -171,7 +179,7 @@ public class Client {
                         break;
                     }
                     case "Purchase": {
-                        Either<Double> either = (Either<Double>) result[2];
+                        Either<Double> either = (Either<Double>) result[3];
                         if(!either.isSuccess()) {
                             System.out.println(either.getError());
                         } else {
@@ -180,7 +188,7 @@ public class Client {
                         break;
                     }
                     default:
-                        System.out.println("Wrong command and/or wrong api call: " + result[1]);
+                        System.out.println("Wrong command and/or wrong api call: " + result[2]);
                 }
             }
         }).start();
@@ -194,7 +202,6 @@ public class Client {
             String input = scanner.nextLine();
             String[] input_parts = input.split(" ");
             String command = input_parts[0];
-            System.out.println(command);
             switch(command) {
                 case "help":
                     System.out.println("ALL COMMANDS CURRENTLY AVAILABLE:");

@@ -1,7 +1,9 @@
 package Marketplace.Payloads;
 
 import java.io.Serializable;
-
+/**
+ * @author: Thomas Louis Fernando Berckmoes (netid: tb000026)
+ */
 public class TopUpBalancePayload implements Serializable {
     private String clientName;
     private Double delta;

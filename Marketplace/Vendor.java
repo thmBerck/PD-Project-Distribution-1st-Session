@@ -13,7 +13,6 @@ import java.util.Scanner;
 public class Vendor {
     private String name;
     private double balance;
-    // TODO Ik moet ervoor zorgen dat wanneer de marketplace iets terugstuurt naar de vendor deze specifiek naar de naam van de vendor wordt gestuurd, ook met client doen.
     private final RemoteSpace ts;
 
     public Vendor(String name, boolean skipRegistration) {
@@ -30,14 +29,14 @@ public class Vendor {
     }
     private void registerAsVendor() {
         try {
-            ts.put("Marketplace", "Register As Vendor", name, "NO_PAYLOAD");
+            ts.put("Marketplace", "Register As Vendor", name);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
     public void addStock(String id, int quantity, Vendor vendor, double price) {
         try {
-            ts.put("Marketplace", "Add Stock", new AddStockPayload(new Item(id, vendor.name, price), quantity), "NO_PAYLOAD");
+            ts.put("Marketplace", "Add Stock", new AddStockPayload(new Item(id, vendor.name, price), quantity));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -53,7 +52,7 @@ public class Vendor {
 
     private void callBalance() {
         try {
-            ts.put("Marketplace", "Get Vendor Balance", this.name, "NO_PAYLOAD");
+            ts.put("Marketplace", "Get Vendor Balance", this.name);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -102,7 +101,6 @@ public class Vendor {
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                System.out.println((String) result[2]);
                 switch((String) result[2]) {
                     case "Add Stock": {
                         Either<String> either = (Either<String>) result[3];

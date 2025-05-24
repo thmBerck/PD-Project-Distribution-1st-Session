@@ -27,35 +27,35 @@ public class Admin {
     }
     private void showClientBalance(String clientName) {
         try {
-            ts.put("Marketplace", "Show Balance", clientName, "NO_PAYLOAD");
+            ts.put("Marketplace", "Show Balance", clientName);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
     private void topUpBalance(String clientName, String delta) {
         try {
-            ts.put("Marketplace", "Top Up Balance", new TopUpBalancePayload(clientName, Double.parseDouble(delta)), "NO_PAYLOAD");
+            ts.put("Marketplace", "Top Up Balance", new TopUpBalancePayload(clientName, Double.parseDouble(delta)));
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
     private void getVendorStock(String vendorName) {
         try {
-            ts.put("Marketplace", "Get Vendor Stock", vendorName, "NO_PAYLOAD");
+            ts.put("Marketplace", "Get Vendor Stock", vendorName);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
     private void getMarketStock() {
         try {
-            ts.put("Marketplace", "Get Market Stock", "NO_PAYLOAD", "NO_PAYLOAD");
+            ts.put("Marketplace", "Get Market Stock", "NO_PAYLOAD");
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
     private void getMarketLog() {
         try {
-            ts.put("Marketplace", "Get Market Log", "NO_PAYLOAD", "NO_PAYLOAD");
+            ts.put("Marketplace", "Get Market Log", "NO_PAYLOAD");
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
@@ -64,7 +64,7 @@ public class Admin {
     public void jobListener() {
         new Thread(() -> {
             while(true) {
-                Object[] result = null;
+                Object[] result;
                 try {
                     result = ts.get(new ActualField("Admin"),new FormalField(String.class), new FormalField(Object.class));
                 } catch (InterruptedException e) {

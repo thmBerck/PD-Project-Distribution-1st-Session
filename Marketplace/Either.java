@@ -1,9 +1,11 @@
 package Marketplace;
 
+import java.io.Serializable;
+
 /**
  * @author: Thomas Louis Fernando Berckmoes (netid: tb000026)
  */
-public class Either<T> {
+public class Either<T> implements Serializable {
     private final T value;
     private final String error;
     private final boolean isSuccess;
